@@ -8,16 +8,22 @@ const auth = require("../middleware/auth");
 // multer middleware
 let storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "./uploads");
+    console.log(req.body);
+    if(file.fieldname === 'profileImage'){
+      cb(null, "./uploads/profile-image");
+    } else {
+      cb(null, "./uploads/background-image");
+    }
+
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + "_" + Date.now() + "_" + file.originalname);
+    cb(null, file.fieldname + "_" + req.body.profileLink + "_" + Date.now() + "_" + file.originalname);
   },
 });
 
 let upload = multer({
   storage: storage,
-}).single("image");
+}).fields([{ name: 'profileImage', maxCount: 1 }, { name: 'backgroundImage', maxCount: 1 }]);
 
 //public routes
 

@@ -9,7 +9,8 @@ const resumeSchema = mongoose.Schema({
   university: String,
   profileLink: String,
   password: String,
-  image: String,
+  profileImage: String,
+  backgroundImage: String,
   agreeTAC: Boolean,
   basicInfo: {
     type: Array,

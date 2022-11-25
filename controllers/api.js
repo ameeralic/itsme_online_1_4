@@ -2,6 +2,7 @@ const Resume = require("../models/Resumes");
 const fs = require("fs");
 const auth = require("../middleware/auth");
 const express = require("express");
+const { log } = require("console");
 
 module.exports = class API {
   //fetch all Resumes
@@ -18,7 +19,6 @@ module.exports = class API {
   //fetch Resume by profile link
   static async fetchResumeByProfileLink(req, res) {
     const { profileLink } = req.params;
-    console.log(profileLink);
     try {
       const resume = await Resume.findOne({ profileLink: profileLink });
       if(resume){
@@ -130,7 +130,6 @@ module.exports = class API {
   // Check whether if email registered or not
   static async checkUser(req, res) {
     const { email } = req.body;
-    console.log(email);
     try {
       const resume = await Resume.findOne({ email: email });
       if (!resume) {
@@ -184,20 +183,38 @@ module.exports = class API {
   //update Resume
   static async updateResume(req, res) {
     const id = res.locals.authStatus.userID;
-    console.log(id);
-    let new_image = "";
-    if (req.file) {
-      new_image = req.file.filename;
-      try {
-        fs.unlinkSync("./uploads/" + req.body.old_image);
-      } catch (error) {
-        console.log(error);
-      }
-    } else {
-      new_image = req.body.old_image;
-    }
+    let new_profileImage = "";
+    let new_backgroundImage = "";
     const newResume = req.body;
-    newResume.image = new_image;
+    if(req.files){
+      if(req.files.profileImage){
+        new_profileImage = req.files['profileImage'][0].filename;
+        try {
+          fs.unlinkSync("./uploads/profile-image/" + req.body.old_profileImage);
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        new_profileImage = req.body.old_profileImage;
+      }
+  
+      if(req.files.backgroundImage){
+        new_backgroundImage = req.files['backgroundImage'][0].filename;
+        try {
+          fs.unlinkSync("./uploads/background-image/" + req.body.old_backgroundImage);
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        new_backgroundImage = req.body.old_backgroundImage;
+      }
+      newResume.profileImage = new_profileImage;
+      newResume.backgroundImage = new_backgroundImage;
+    } 
+
+
+    
+
     try {
       await Resume.findByIdAndUpdate(id, newResume);
       res
