@@ -6,8 +6,8 @@ const createJWT = (loggedUserDetails) => {
     let token = jwt.sign(
       {
         idJWT: loggedUserDetails._id,
-        emailJWT: loggedUserDetails.email,
-        passwordJWT: loggedUserDetails.password,
+        emailJWT: loggedUserDetails.userInfo.userEmail,
+        passwordJWT: loggedUserDetails.userInfo.userPassword
       },
       "secretkeyappearshere",
       { expiresIn: "1h" }

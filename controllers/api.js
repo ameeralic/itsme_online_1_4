@@ -1,10 +1,57 @@
 const Resume = require("../models/Resumes");
 const fs = require("fs");
 const auth = require("../middleware/auth");
-const express = require("express");
-const { log } = require("console");
+var csv = require("csv-parse")
+const { parse } = require("csv-parse")
+
+var colleges;
+const parser = parse({delimiter: ','}, function(err, data){
+  colleges = data
+});
+
+fs.createReadStream(__dirname+'/database.csv').pipe(parser);
 
 module.exports = class API {
+
+  static async fetchUniversity(req,res){
+    const universities = [...new Set(colleges.map(item => item[1]))]
+    console.log(universities);
+    res.status(200).json({
+      isAuth: false,
+      isSuccess: true,
+      data: JSON.stringify(universities),
+      msg: "Universities data retrieved",
+    });
+  }
+  static async fetchColleges(req, res) {
+    // console.log(req.body);
+    // var { keyword } = req.body
+    // if(keyword !==''){
+    //   keyword = keyword.toLowerCase()
+    // }
+    // var result = [];
+  
+    // for(var i = 0 ; i < colleges.length ; i++){
+  
+    //   if(colleges[i][2].toLowerCase().indexOf(keyword)>=0){	
+  
+    //     colleges[i][2] = colleges[i][2].replace(/\:[^>]*\)/ig,"");
+    //     colleges[i][2] = colleges[i][2].replace(/(\(Id)/ig,"");
+  
+    //     colleges[i][1] = colleges[i][1].replace(/\:[^>]*\)/ig,"");
+    //     colleges[i][1] = colleges[i][1].replace(/(\(Id)/ig,"");
+  
+    //     result.push(colleges[i]);
+    //   }
+    // }
+    res.status(200).json({
+      isAuth: false,
+      isSuccess: true,
+      data: JSON.stringify(colleges),
+      msg: "College data retrieved",
+    });
+  
+  }
   //fetch all Resumes
   // static async fetchAllResume(req, res) {
   //   try {
@@ -15,20 +62,19 @@ module.exports = class API {
   //   }
   // }
 
-
   //fetch Resume by profile link
   static async fetchResumeByProfileLink(req, res) {
     const { profileLink } = req.params;
     try {
       const resume = await Resume.findOne({ profileLink: profileLink });
-      if(resume){
+      if (resume) {
         res.status(200).json({
           isAuth: false,
           isSuccess: true,
           data: resume,
           msg: "Profile Link valid, data successfully retrieved",
         });
-        return
+        return;
       }
       res.status(200).json({
         isAuth: false,
@@ -36,17 +82,14 @@ module.exports = class API {
         data: resume,
         msg: "Profile Link invalid, No matching profile found",
       });
-
     } catch (err) {
       console.log(err.message);
-      res
-        .status(200)
-        .json({
-          isAuth: false,
-          isSuccess: true,
-          data: null,
-          msg: "Some error!, data failed retrieved - " + err.message,
-        });
+      res.status(200).json({
+        isAuth: false,
+        isSuccess: true,
+        data: null,
+        msg: "Some error!, data failed retrieved - " + err.message,
+      });
     }
   }
   //fetch Resume by id
@@ -66,13 +109,11 @@ module.exports = class API {
       });
     } catch (err) {
       console.log(err.message);
-      res
-        .status(200)
-        .json({
-          isAuth: true,
-          data: null,
-          msg: "Authentication Success, data failed retrieved" + err.message,
-        });
+      res.status(200).json({
+        isAuth: true,
+        data: null,
+        msg: "Authentication Success, data failed retrieved" + err.message,
+      });
     }
   }
 
@@ -186,9 +227,9 @@ module.exports = class API {
     let new_profileImage = "";
     let new_backgroundImage = "";
     const newResume = req.body;
-    if(req.files){
-      if(req.files.profileImage){
-        new_profileImage = req.files['profileImage'][0].filename;
+    if (req.files) {
+      if (req.files.profileImage) {
+        new_profileImage = req.files["profileImage"][0].filename;
         try {
           fs.unlinkSync("./uploads/profile-image/" + req.body.old_profileImage);
         } catch (error) {
@@ -197,11 +238,13 @@ module.exports = class API {
       } else {
         new_profileImage = req.body.old_profileImage;
       }
-  
-      if(req.files.backgroundImage){
-        new_backgroundImage = req.files['backgroundImage'][0].filename;
+
+      if (req.files.backgroundImage) {
+        new_backgroundImage = req.files["backgroundImage"][0].filename;
         try {
-          fs.unlinkSync("./uploads/background-image/" + req.body.old_backgroundImage);
+          fs.unlinkSync(
+            "./uploads/background-image/" + req.body.old_backgroundImage
+          );
         } catch (error) {
           console.log(error);
         }
@@ -210,10 +253,27 @@ module.exports = class API {
       }
       newResume.profileImage = new_profileImage;
       newResume.backgroundImage = new_backgroundImage;
-    } 
+    }
 
+    if (req.body.delete_profileImage) {
+      try {
+        fs.unlinkSync("./uploads/profile-image/" + req.body.old_profileImage);
+      } catch (error) {
+        console.log(error);
+      }
+      newResume.profileImage = "";
+    }
 
-    
+    if (req.body.delete_backgroundImage) {
+      try {
+        fs.unlinkSync(
+          "./uploads/background-image/" + req.body.old_backgroundImage
+        );
+      } catch (error) {
+        console.log(error);
+      }
+      newResume.backgroundImage = "";
+    }
 
     try {
       await Resume.findByIdAndUpdate(id, newResume);
@@ -221,12 +281,10 @@ module.exports = class API {
         .status(200)
         .json({ isUpdated: true, msg: "Resume updated successfully" });
     } catch (error) {
-      res
-        .status(400)
-        .json({
-          isUpdated: false,
-          msg: "Resume failed to Update" + error.message,
-        });
+      res.status(400).json({
+        isUpdated: false,
+        msg: "Resume failed to Update" + error.message,
+      });
     }
   }
 
