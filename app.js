@@ -15,7 +15,7 @@ app.use(express.urlencoded({extended: true}))
 app.use('/uploads',express.static('uploads'))
 
 //database connection
-mongoose.connect(process.env.DB_URI_ITSME,{
+mongoose.connect(process.env.DB_URI_LIVE,{
     useNewUrlParser : true,
     useUnifiedTopology: true
     //useFindAndModify: true,
